@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Check if the user is running this script as root
+if [ "$EUID" -ne 0 ]
+  then echo "Please run as root"
+  exit
+fi
+
+# Autodetect the kind of video card in the system
+if lspci | grep -i "vga compatible controller: NVIDIA" > /dev/null; then
+    echo "NVIDIA video card detected"
+    card=$(lspci | grep -i "vga compatible controller: NVIDIA" | cut -d ":" -f3 | sed 's/^ //')
+    driver_pkg="nvidia-driver"
+elif lspci | grep -i "vga compatible controller: ATI" > /dev/null; then
+    echo "ATI video card detected"
+    card=$(lspci | grep -i "vga compatible controller: ATI" | cut -d ":" -f3 | sed 's/^ //')
+    driver_pkg="fglrx-driver"
+else
+    echo "Unsupported video card"
+    exit 1
+fi
+
+# Search for the appropriate driver package for the detected card
+if apt-cache search $driver_pkg | grep -i "$card" > /dev/null; then
+    echo "Found driver package for $card"
+    apt-get install $driver_pkg
+else
+    echo "No driver package available for $card"
+    exit 1
+fi
+
+# Start an OpenGL diagnostic test
+glxgears
