@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Check if the user is running this script as root
+if [ "$EUID" -ne 0 ]
+  then echo "Please run as root"
+  exit
+fi
+
+# Autodetect the kind of video card in the system
+if lspci | grep -i "vga compatible controller: NVIDIA" > /dev/null; then
+    echo "NVIDIA video card detected"
+    driver="nvidia"
+    if lspci | grep -i "agp" > /dev/null; then
+        echo "AGP video card detected"
+        agp=true
+    else
+        echo "PCI video card detected"
+        agp=false
+    fi
+elif lspci | grep -i "vga compatible controller: ATI" > /dev/null; then
+    echo "ATI video card detected"
+    driver="fglrx"
+    if lspci | grep -i "agp" > /dev/null; then
+        echo "AGP video card detected"
+        agp=true
+    else
+        echo "PCI video card detected"
+        agp=false
+    fi
+else
+    echo "Unsupported video card"
+    exit 1
+fi
+
+# Load the drivers
+modprobe $driver
+
+# Start an OpenGL diagnostic test
+glxgears
+
+# Use the agp variable to perform actions specific to AGP or PCI cards
+if [ "$agp" = true ]; then
+    # Actions specific to AGP cards
+    echo "Performing actions specific to AGP cards"
+else
+    # Actions specific to PCI cards
+    echo "Performing actions specific to PCI cards"
+fi
