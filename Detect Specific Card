@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Check if the user is running this script as root
+if [ "$EUID" -ne 0 ]
+  then echo "Please run as root"
+  exit
+fi
+
+# Autodetect the kind of video card in the system
+if lspci | grep -i "vga compatible controller: NVIDIA" > /dev/null; then
+    echo "NVIDIA video card detected"
+    driver="nvidia"
+    card=$(lspci | grep -i "vga compatible controller: NVIDIA" | cut -d ":" -f3 | sed 's/^ //')
+elif lspci | grep -i "vga compatible controller: ATI" > /dev/null; then
+    echo "ATI video card detected"
+    driver="fglrx"
+    card=$(lspci | grep -i "vga compatible controller: ATI" | cut -d ":" -f3 | sed 's/^ //')
+else
+    echo "Unsupported video card"
+    exit 1
+fi
+
+# Install the appropriate driver for the detected card
+case $card in
+    "GeForce 8800 GT")
+        echo "Installing NVIDIA driver for GeForce 8800 GT"
+        # Install the driver for the GeForce 8800 GT here
+        ;;
+    "Radeon HD 4850")
+        echo "Installing ATI driver for Radeon HD 4850"
+        # Install the driver for the Radeon HD 4850 here
+        ;;
+    *)
+        echo "No driver available for $card"
+        exit 1
+        ;;
+esac
+
+# Start an OpenGL diagnostic test
+glxgears
